@@ -93,6 +93,12 @@ const App: FC = () => {
     setItemsPerSelect(count);
   }, [params, setItemsPerSelect]);
 
+  useEffect(() => {
+    if (!file && !list?.length) {
+      setFilename('');
+    }
+  }, [file, list?.length, setFilename]);
+
   const hiddenFileInput = useRef<HTMLInputElement>(null);
 
   const navigate = useNavigate();
@@ -153,14 +159,19 @@ const App: FC = () => {
           {$t('Upload your list and get random items from it.')}
         </p>
         <div className="mt-11 flex flex-col items-start gap-5">
-          <div>
-            <button
-              onClick={() => hiddenFileInput.current?.click()}
-              className="rounded-md bg-white dark:bg-gray-800 px-3 py-2 text-sm font-semibold shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
-            >
-              {$t('Upload a TXT file')}
-            </button>
-            <span className="pl-3 text-sm">{file?.name ?? filename}</span>
+          <div className="flex">
+            <div className="flex flex-col justify-start items-start">
+              <button
+                onClick={() => hiddenFileInput.current?.click()}
+                className="rounded-md bg-white dark:bg-gray-800 px-3 py-2 text-sm font-semibold shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+              >
+                {$t('Upload a TXT file')}
+              </button>
+              <span className="text-xs leading-6 text-gray-600 dark:text-gray-400">
+                {$t('1 line – 1 item')}
+              </span>
+            </div>
+            <span className="pl-3 pt-2 text-sm">{file?.name ?? filename}</span>
           </div>
           <input
             type="file"
@@ -200,12 +211,9 @@ const App: FC = () => {
             >
               {$t('Get started')}
             </button>
-            {!!(list?.length || itemsPerSelect > 1 || file) && (
+            {!!(list?.length || itemsPerSelect > 1) && (
               <button
-                onClick={() => {
-                  setFile(null);
-                  clear();
-                }}
+                onClick={() => clear()}
                 className="rounded-md bg-white dark:bg-gray-800 px-5 py-2.5 font-semibold shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
               >
                 {$t('Clear')}
