@@ -27,32 +27,70 @@ const App: FC = () => {
   }, [isDarkMode]);
 
   useEffect(() => {
-    const listName = params.get('list');
+    const langParam = params.get('lang');
 
-    if (!listName) {
+    if (!langParam) {
       return;
     }
 
-    if (!(listName in defaultLists)) {
+    if (!['en', 'ru'].includes(langParam)) {
+      console.error('Invalid lang param');
       return;
     }
 
-    fetch(defaultLists[listName])
+    setLang(langParam as Lang);
+  }, [params, setLang]);
+
+  useEffect(() => {
+    const modeParam = params.get('mode');
+
+    if (!modeParam) {
+      return;
+    }
+
+    if (!['light', 'dark'].includes(modeParam)) {
+      console.error('Invalid model param');
+      return;
+    }
+
+    setIsDarkMode(modeParam === 'dark');
+  }, [params, setIsDarkMode]);
+
+  useEffect(() => {
+    const listParam = params.get('list');
+
+    if (!listParam) {
+      return;
+    }
+
+    if (!(listParam in defaultLists)) {
+      console.error('Invalid list param');
+      return;
+    }
+
+    fetch(defaultLists[listParam])
       .then(res => res.text())
       .then(list => {
         setList(list.split('\n'));
-        setFilename(listName + '.txt');
+        setFilename(listParam + '.txt');
       });
   }, [params, setList, setFilename]);
 
   useEffect(() => {
-    const count = params.get('count');
+    const countParam = params.get('count');
 
-    if (!count) {
+    if (!countParam) {
       return;
     }
 
-    setItemsPerSelect(+count);
+    const count = +countParam;
+
+    if (isNaN(count)) {
+      console.error('Invalid count param');
+      return;
+    }
+
+    setItemsPerSelect(count);
   }, [params, setItemsPerSelect]);
 
   const hiddenFileInput = useRef<HTMLInputElement>(null);
