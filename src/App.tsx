@@ -1,20 +1,30 @@
 import { useState, useRef, useEffect, type FC } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { useListStore } from './list-store';
+import { MoonIcon, SunIcon } from '@heroicons/react/24/outline';
+import { useStore, type Lang } from './store';
+import { useTranslator } from './langs';
 
 import defaultLists from './lists';
 
 const App: FC = () => {
-  const [file, setFile] = useState<File>();
-  const list = useListStore(state => state.list);
-  const filename = useListStore(state => state.filename);
-  const itemsPerSelect = useListStore(state => state.itemsPerSelect);
-  const setFilename = useListStore(state => state.setFilename);
-  const setList = useListStore(state => state.setList);
-  const setItemsPerSelect = useListStore(state => state.setItemsPerSelect);
-  const clear = useListStore(state => state.clear);
+  const [file, setFile] = useState<File | null>();
+  const isDarkMode = useStore(state => state.isDarkMode);
+  const lang = useStore(state => state.lang);
+  const list = useStore(state => state.list);
+  const filename = useStore(state => state.filename);
+  const itemsPerSelect = useStore(state => state.itemsPerSelect);
+  const setIsDarkMode = useStore(state => state.setIsDarkMode);
+  const setLang = useStore(state => state.setLang);
+  const setFilename = useStore(state => state.setFilename);
+  const setList = useStore(state => state.setList);
+  const setItemsPerSelect = useStore(state => state.setItemsPerSelect);
+  const clear = useStore(state => state.clear);
 
   const [params] = useSearchParams();
+
+  useEffect(() => {
+    document.body.classList[isDarkMode ? 'add' : 'remove']('dark');
+  }, [isDarkMode]);
 
   useEffect(() => {
     const listName = params.get('list');
@@ -74,22 +84,43 @@ const App: FC = () => {
     reader.readAsText(file);
   };
 
+  const $t = useTranslator();
+
   return (
-    <div className="bg-white">
-      <div className="mx-auto max-w-7xl min-h-screen flex flex-col justify-center px-6 lg:px-8">
-        <h1 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
-          Random List Item Selector
+    <div className="bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-50">
+      <header className="h-24">
+        <nav className="mx-auto flex max-w-7xl justify-end p-6 lg:px-8">
+          <button
+            onClick={() => setIsDarkMode(!isDarkMode)}
+            className="rounded-lg px-3 py-2.5 mr-4 text-base font-semibold leading-7 hover:bg-gray-50 dark:hover:bg-gray-700"
+          >
+            {isDarkMode ? <SunIcon className="h-6 w-6" /> : <MoonIcon className="h-6 w-6" />}
+          </button>
+          <select
+            value={lang}
+            onChange={e => setLang(e.target.value as Lang)}
+            className="text-black dark:bg-gray-800 dark:text-white rounded-md"
+          >
+            <option value="en">En</option>
+            <option value="ru">Ру</option>
+          </select>
+        </nav>
+      </header>
+
+      <div className="mx-auto max-w-7xl min-h-screen flex flex-col justify-center px-6 lg:px-8 -mt-24">
+        <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
+          {$t('Random List Item Selector')}
         </h1>
-        <p className="mt-6 max-w-xl text-lg leading-8 text-gray-600">
-          Upload your list and get random items from it.
+        <p className="mt-6 max-w-xl text-lg leading-8 text-gray-600 dark:text-gray-400">
+          {$t('Upload your list and get random items from it.')}
         </p>
         <div className="mt-11 flex flex-col items-start gap-5">
           <div>
             <button
               onClick={() => hiddenFileInput.current?.click()}
-              className="rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
+              className="rounded-md bg-white dark:bg-gray-800 px-3 py-2 text-sm font-semibold shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
             >
-              Upload a file
+              {$t('Upload a TXT file')}
             </button>
             <span className="pl-3 text-sm">{file?.name ?? filename}</span>
           </div>
@@ -109,11 +140,8 @@ const App: FC = () => {
             className="hidden"
           />
           <div>
-            <label
-              htmlFor="items-count"
-              className="block text-sm font-medium leading-6 text-gray-900"
-            >
-              Items per select
+            <label htmlFor="items-count" className="block text-sm font-medium leading-6">
+              {$t('Items per select')}
             </label>
             <div className="mt-2">
               <input
@@ -122,7 +150,7 @@ const App: FC = () => {
                 onChange={e => setItemsPerSelect(e.target.valueAsNumber)}
                 min={1}
                 id="items-count"
-                className="block w-[108px] rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                className="block w-[108px] text-black dark:bg-gray-800 dark:text-white rounded-md border-0 py-1.5 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
               />
             </div>
           </div>
@@ -132,14 +160,17 @@ const App: FC = () => {
               disabled={!file && !list?.length}
               className="rounded-md bg-indigo-600 px-5 py-2.5 font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-60"
             >
-              Get started
+              {$t('Get started')}
             </button>
-            {!!(list?.length || itemsPerSelect > 1) && (
+            {!!(list?.length || itemsPerSelect > 1 || file) && (
               <button
-                onClick={() => clear()}
-                className="rounded-md bg-white px-5 py-2.5 font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
+                onClick={() => {
+                  setFile(null);
+                  clear();
+                }}
+                className="rounded-md bg-white dark:bg-gray-800 px-5 py-2.5 font-semibold shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
               >
-                Clear
+                {$t('Clear')}
               </button>
             )}
           </div>
