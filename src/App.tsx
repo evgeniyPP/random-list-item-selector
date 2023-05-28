@@ -1,6 +1,8 @@
-import { useState, useRef, type FC } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useRef, useEffect, type FC } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useListStore } from './list-store';
+
+import defaultLists from './lists';
 
 const App: FC = () => {
   const [file, setFile] = useState<File>();
@@ -11,6 +13,37 @@ const App: FC = () => {
   const setList = useListStore(state => state.setList);
   const setItemsPerSelect = useListStore(state => state.setItemsPerSelect);
   const clear = useListStore(state => state.clear);
+
+  const [params] = useSearchParams();
+
+  useEffect(() => {
+    const listName = params.get('list');
+
+    if (!listName) {
+      return;
+    }
+
+    if (!(listName in defaultLists)) {
+      return;
+    }
+
+    fetch(defaultLists[listName])
+      .then(res => res.text())
+      .then(list => {
+        setList(list.split('\n'));
+        setFilename(listName + '.txt');
+      });
+  }, [params, setList, setFilename]);
+
+  useEffect(() => {
+    const count = params.get('count');
+
+    if (!count) {
+      return;
+    }
+
+    setItemsPerSelect(+count);
+  }, [params, setItemsPerSelect]);
 
   const hiddenFileInput = useRef<HTMLInputElement>(null);
 
@@ -101,7 +134,7 @@ const App: FC = () => {
             >
               Get started
             </button>
-            {!!list?.length && (
+            {!!(list?.length || itemsPerSelect > 1) && (
               <button
                 onClick={() => clear()}
                 className="rounded-md bg-white px-5 py-2.5 font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
